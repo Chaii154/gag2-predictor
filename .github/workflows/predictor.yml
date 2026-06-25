@@ -2,7 +2,7 @@ name: GAG2 Predictor Auto Run
 
 on:
   schedule:
-    - cron: "*/5 * * * *"
+    - cron: "*/2 * * * *"
   workflow_dispatch: {}
 
 jobs:
@@ -24,4 +24,6 @@ jobs:
       - name: Run predictor
         env:
           WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          GIST_ID: ${{ secrets.GIST_ID }}
+          GIST_TOKEN: ${{ secrets.GIST_TOKEN }}
         run: python gag2_predictor_actions.py
