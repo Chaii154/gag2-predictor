@@ -1,15 +1,15 @@
-name: GAG2 Discord Predictor
+name: GAG2 Predictor Auto Run
 
 on:
   schedule:
-    - cron: '*/5 * * * *'
-  workflow_dispatch:
+    # Jalan tiap 5 menit, samain sama siklus restock GAG2
+    - cron: "*/5 * * * *"
+  workflow_dispatch: {}   # bisa di-trigger manual dari tab Actions
 
 jobs:
-  send-prediction:
+  run-predictor:
     runs-on: ubuntu-latest
-    timeout-minutes: 4
-
+    timeout-minutes: 3
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -17,12 +17,12 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Install dependencies
         run: pip install requests
 
-      - name: Run GAG2 Predictor
+      - name: Run predictor
         env:
-          WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
-        run: python gag2_predictor_actions.py
+          WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
+        run: python gag2_predictor.py
