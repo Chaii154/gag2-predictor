@@ -2,9 +2,8 @@ name: GAG2 Predictor Auto Run
 
 on:
   schedule:
-    # Jalan tiap 5 menit, samain sama siklus restock GAG2
     - cron: "*/5 * * * *"
-  workflow_dispatch: {}   # bisa di-trigger manual dari tab Actions
+  workflow_dispatch: {}
 
 jobs:
   run-predictor:
@@ -25,4 +24,4 @@ jobs:
       - name: Run predictor
         env:
           WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
-        run: python gag2_predictor.py
+        run: python gag2_predictor_actions.py
