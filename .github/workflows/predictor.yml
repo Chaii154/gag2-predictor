@@ -23,5 +23,5 @@ jobs:
 
       - name: Run predictor
         env:
-          WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
+          WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: python gag2_predictor_actions.py
