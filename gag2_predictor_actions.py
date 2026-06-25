@@ -9,14 +9,16 @@ import random
 import os
 from datetime import datetime, timezone
 
-WEBHOOK_URL = os.environ.get(
-    "WEBHOOK_URL",
-    "https://discord.com/api/webhooks/1455445496989745328/BB_6EjQuuRAX_IvfBEcZfpIf66R46GTPZMOJndMvfzoylNZW-K_f98WEhNdI3AXWY8rq"
-)
+WEBHOOK_URL = os.environ.get("WEBHOOK_URL")
+if not WEBHOOK_URL:
+    raise RuntimeError(
+        "WEBHOOK_URL env var belum di-set. Jangan hardcode webhook URL di kode, "
+        "set lewat environment variable supaya tidak ke-leak kalau script dibagikan/di-upload."
+    )
 
-# ══════════════════════════════════════════════════════
-# 🌱 SUPER SEEDS (fokus utama)
-# ══════════════════════════════════════════════════════
+# Link private server (dipasang di embed pet spawn)
+PRIVATE_SERVER_LINK = "https://www.roblox.com/share?code=803e2bdb19ceda4a8bb381469a30f8ff&type=Server"
+
 SUPER_SEEDS = [
     {"name": "Moon Bloom",      "emoji": "🌸", "price": "∞ S",      "chance": 0.35, "tip": "Terbaik untuk Blood Moon!"},
     {"name": "Beanstalk",       "emoji": "🌿", "price": "∞ S",      "chance": 0.35, "tip": "Tinggi & nilai jual besar"},
@@ -31,9 +33,6 @@ MYTHIC_SEEDS = [
     {"name": "Lychee",        "emoji": "🔴", "price": "750,000 S","chance": 0.8, "tip": "Nilai jual tinggi"},
 ]
 
-# ══════════════════════════════════════════════════════
-# 💧 WATERING CAN & ALL SPRINKLERS
-# ══════════════════════════════════════════════════════
 WATERING_GEAR = [
     {"name": "Watering Can",        "emoji": "🪣", "price": "FREE",         "rarity": "Common",    "effect": "Manual siram 1 tanaman", "stock_chance": 100},
     {"name": "Common Sprinkler",    "emoji": "💧", "price": "3,000 S",      "rarity": "Common",    "effect": "Area kecil, otomatis siram", "stock_chance": 90},
@@ -44,9 +43,6 @@ WATERING_GEAR = [
     {"name": "Rainbow Sprinkler",   "emoji": "🌈", "price": "∞ / Event",    "rarity": "Rainbow",   "effect": "Terbaik di game, rainbow boost", "stock_chance": 2},
 ]
 
-# ══════════════════════════════════════════════════════
-# 🌦️ CUACA DENGAN MUTASI (tanpa Clear & Night)
-# ══════════════════════════════════════════════════════
 MUTATION_WEATHERS = [
     {"name": "🌧️ Rain",           "mutation": "Wet",        "mult": "2x",   "rare": False, "tip": "Tanaman basah, bonus kecil"},
     {"name": "🌬️ Wind",          "mutation": "Windswept",  "mult": "5x",   "rare": False, "tip": "Angin kencang, bonus sedang"},
@@ -59,9 +55,6 @@ MUTATION_WEATHERS = [
     {"name": "🩸 Blood Moon",     "mutation": "Bloodlit",   "mult": "80x",  "rare": True,  "tip": "🚨 TERTINGGI! Tanam Super Seeds!"},
 ]
 
-# ══════════════════════════════════════════════════════
-# 🏠 FENCE PROPS (dari Fence Crate)
-# ══════════════════════════════════════════════════════
 FENCE_PROPS = [
     {"name": "Default Fence",       "emoji": "🏠", "chance": "~50%",   "rarity": "Common",    "source": "Default / Gratis"},
     {"name": "Wooden Fence",        "emoji": "🌲", "chance": "~25%",   "rarity": "Common",    "source": "Fence Crate"},
@@ -74,11 +67,7 @@ FENCE_PROPS = [
     {"name": "Rainbow Fence",       "emoji": "🌈", "chance": "~0.5%",  "rarity": "Rainbow",   "source": "Fence Crate (sangat langka!)"},
 ]
 
-# ══════════════════════════════════════════════════════
-# 🐾 SEMUA PET GAG2
-# ══════════════════════════════════════════════════════
 ALL_PETS = [
-    # (nama, emoji, rarity, harga, spawn_chance%, ability, tier)
     {"name": "Frog",             "emoji": "🐸", "rarity": "Common",    "price": "10,000 S",      "spawn": 11.9, "ability": "+Jump Height (bantu ambil tanaman tinggi)", "tier": "B"},
     {"name": "Bunny",            "emoji": "🐰", "rarity": "Common",    "price": "20,000 S",      "spawn": 10.0, "ability": "+Walk Speed (bisa stack!)", "tier": "A"},
     {"name": "Robin",            "emoji": "🐦", "rarity": "Common",    "price": "15,000 S",      "spawn": 9.0,  "ability": "Panen otomatis (tapi juga makan tanaman kamu)", "tier": "C"},
@@ -99,6 +88,27 @@ RARITY_COLOR = {
     "Epic": "🟪", "Legendary": "🟧", "Mythic": "🟥", "Super": "⭐", "Rainbow": "🌈"
 }
 
+# ══════════════════════════════════════════════════════
+# 🍎 FRUIT BASE SELL PRICE (buat hitung mana yang "OP" saat mutasi aktif)
+# Base price = harga normal jual per buah (tanpa mutasi)
+# ══════════════════════════════════════════════════════
+FRUIT_BASE_PRICE = [
+    {"name": "Carrot",        "emoji": "🥕", "base": 20},
+    {"name": "Strawberry",    "emoji": "🍓", "base": 35},
+    {"name": "Tomato",        "emoji": "🍅", "base": 60},
+    {"name": "Blueberry",     "emoji": "🫐", "base": 90},
+    {"name": "Watermelon",    "emoji": "🍉", "base": 2800},
+    {"name": "Pumpkin",       "emoji": "🎃", "base": 3200},
+    {"name": "Mango",         "emoji": "🥭", "base": 4500},
+    {"name": "Coconut",       "emoji": "🥥", "base": 6000},
+    {"name": "Cactus",        "emoji": "🌵", "base": 7500},
+    {"name": "Dragon Fruit",  "emoji": "🐉", "base": 15000},
+    {"name": "Lychee",        "emoji": "🔴", "base": 25000},
+    {"name": "Moon Bloom",    "emoji": "🌸", "base": 60000},
+    {"name": "Beanstalk",     "emoji": "🌿", "base": 75000},
+    {"name": "Poison Apple",  "emoji": "🍏", "base": 90000},
+]
+
 def get_time_info():
     now = datetime.now(timezone.utc)
     wib_hour = (now.hour + 7) % 24
@@ -107,14 +117,13 @@ def get_time_info():
     time_to_next = 300 - cycle_s
     mins = int(time_to_next // 60)
     secs = int(time_to_next % 60)
-    return now, wib_str, mins, secs
+    restock_ts = int(now.timestamp() + time_to_next)
+    return now, wib_str, mins, secs, restock_ts
 
 def pick_weather():
     common_w = [w for w in MUTATION_WEATHERS if not w["rare"]]
     rare_w   = [w for w in MUTATION_WEATHERS if w["rare"]]
-    # cuaca aktif sekarang (80% common, 20% rare)
     active = random.choice(rare_w) if random.random() < 0.20 else random.choice(common_w)
-    # prediksi 3 berikutnya
     upcoming = []
     for _ in range(3):
         if random.random() < 0.18:
@@ -124,7 +133,6 @@ def pick_weather():
     return active, upcoming
 
 def pick_super_seeds_available():
-    """Cek Super & Mythic seed mana yang mungkin available sekarang"""
     available = []
     for s in SUPER_SEEDS:
         if random.random() * 100 < s["chance"]:
@@ -135,7 +143,6 @@ def pick_super_seeds_available():
     return available
 
 def pick_next_super_seeds():
-    """Prediksi next restock super/mythic"""
     available = []
     for s in SUPER_SEEDS:
         if random.random() * 100 < s["chance"] * 1.2:
@@ -146,7 +153,6 @@ def pick_next_super_seeds():
     return available
 
 def pick_sprinklers_stock():
-    """Simulasi stock sprinkler sekarang"""
     stocked = []
     for g in WATERING_GEAR:
         if random.random() * 100 < g["stock_chance"]:
@@ -154,29 +160,43 @@ def pick_sprinklers_stock():
     return stocked if stocked else WATERING_GEAR[:3]
 
 def pick_pet_spawns():
-    """Simulasi pet yang spawn di server KiKo15400"""
     spawning = []
     for p in ALL_PETS:
-        # Simulasikan apakah pet ini sedang/akan spawn
         roll = random.random() * 100
-        if roll < p["spawn"] * 3:  # dikali 3 biar lebih realistis per sesi
+        if roll < p["spawn"] * 3:
             spawning.append(p)
-    # Selalu ada minimal 2-3 common pet
     if len(spawning) < 2:
         commons = [p for p in ALL_PETS if p["rarity"] == "Common"]
         spawning = random.sample(commons, min(2, len(commons))) + spawning
-    return spawning[:6]  # max 6 pet ditampilkan
+    return spawning[:6]
 
-def send_to_discord(now, wib_str, mins, secs):
+def get_active_mult_value(active_weather):
+    """Ambil multiplier numerik dari teks mult (e.g. '80x' -> 80)."""
+    try:
+        return float(active_weather["mult"].replace("x", ""))
+    except (ValueError, KeyError):
+        return 1.0
+
+def compute_fruit_prices(active_weather):
+    """Hitung harga jual fruit sekarang = base price x multiplier cuaca aktif.
+    Diurutkan dari paling mahal (paling OP) ke paling murah."""
+    mult = get_active_mult_value(active_weather)
+    mutation_name = active_weather.get("mutation", "Normal")
+    priced = []
+    for f in FRUIT_BASE_PRICE:
+        current_price = int(f["base"] * mult)
+        priced.append({**f, "current_price": current_price, "mutation": mutation_name, "mult": active_weather["mult"]})
+    priced.sort(key=lambda x: x["current_price"], reverse=True)
+    return priced
+
+def send_to_discord(now, wib_str, mins, secs, restock_ts):
     active_weather, next_weathers = pick_weather()
     super_now   = pick_super_seeds_available()
     super_next  = pick_next_super_seeds()
     sprinklers  = pick_sprinklers_stock()
     pet_spawns  = pick_pet_spawns()
+    fruit_prices = compute_fruit_prices(active_weather)
 
-    # ────────────────────────────────────────
-    # HEADER MESSAGE
-    # ────────────────────────────────────────
     header = (
         "```ansi\n"
         "\u001b[1;32m╔══════════════════════════════════════════╗\u001b[0m\n"
@@ -185,33 +205,27 @@ def send_to_discord(now, wib_str, mins, secs):
         "```"
     )
 
-    # ────────────────────────────────────────
-    # EMBED 1: STATUS SEKARANG
-    # ────────────────────────────────────────
+    countdown_txt = f"<t:{restock_ts}:F>  •  <t:{restock_ts}:R>"
+
     rare_tag = " 🚨 **[ RARE! ]**" if active_weather["rare"] else ""
     embed_status = {
-        "title": "📡  STATUS SERVER SEKARANG",
+        "title": "📡  STOCK & STATUS SEKARANG",
         "color": 0x57f287,
         "fields": [
             {
-                "name": "🕐  Waktu & Restock",
+                "name": "🕐  Waktu & Restock Berikutnya",
                 "value": (
-                    f"```\n"
-                    f"Jam      : {wib_str}\n"
-                    f"Restock  : {mins}m {secs}s lagi\n"
-                    f"Siklus   : Setiap 5 menit (global)\n"
-                    f"```"
+                    f"```\nJam (WIB) : {wib_str}\nSiklus    : Setiap 5 menit (global)\n```"
+                    f"⏳ Restock di: {countdown_txt}"
                 ),
                 "inline": False
             },
             {
-                "name": f"🌦️  CUACA AKTIF SEKARANG{rare_tag}",
+                "name": f"🌦️  Cuaca Aktif{rare_tag}",
                 "value": (
-                    f"```\n"
-                    f"Cuaca    : {active_weather['name']}\n"
+                    f"```\nCuaca    : {active_weather['name']}\n"
                     f"Mutation : {active_weather['mutation']}\n"
-                    f"Multiplier: {active_weather['mult']}\n"
-                    f"```\n"
+                    f"Multiplier: {active_weather['mult']}\n```\n"
                     f"💡 {active_weather['tip']}"
                 ),
                 "inline": False
@@ -220,9 +234,6 @@ def send_to_discord(now, wib_str, mins, secs):
         "footer": {"text": "GAG2 Predictor for KiKo15400 • Update tiap 5 menit"}
     }
 
-    # ────────────────────────────────────────
-    # EMBED 2: SUPER & MYTHIC SEEDS
-    # ────────────────────────────────────────
     def fmt_seeds(seed_list, label):
         if not seed_list:
             return f"*Tidak ada {label} yang tersedia saat ini*"
@@ -235,25 +246,84 @@ def send_to_discord(now, wib_str, mins, secs):
             )
         return "\n".join(lines)
 
-    now_seeds_txt  = fmt_seeds(super_now, "Super/Mythic")
-    next_seeds_txt = fmt_seeds(super_next, "Super/Mythic")
-
-    embed_seeds = {
-        "title": "⭐  SUPER & MYTHIC SEEDS",
+    embed_seeds_now = {
+        "title": "⭐  SUPER & MYTHIC SEEDS — TERSEDIA SEKARANG",
         "color": 0xffd700,
+        "description": fmt_seeds(super_now, "Super/Mythic"),
         "fields": [
+            {"name": "⏳  Restock Slot Ini Berakhir", "value": countdown_txt, "inline": False}
+        ],
+        "footer": {"text": "⭐ Super seeds = rarity tertinggi di GAG2"}
+    }
+
+    sprinkler_lines = []
+    for i, g in enumerate(WATERING_GEAR, 1):
+        rc = RARITY_COLOR.get(g["rarity"], "")
+        in_stock = "✅" if any(s["name"] == g["name"] for s in sprinklers) else "❌"
+        sprinkler_lines.append(
+            f"`{i}.` {g['emoji']} **{g['name']}** {in_stock}\n"
+            f"     💰 `{g['price']}` | {rc} {g['rarity']}\n"
+            f"     ⚡ {g['effect']}"
+        )
+
+    embed_sprinklers = {
+        "title": "💧  WATERING CAN & ALL SPRINKLERS — STOCK SEKARANG",
+        "color": 0x00bcd4,
+        "description": "\n".join(sprinkler_lines),
+        "fields": [
+            {"name": "📌  Keterangan", "value": "✅ = Tersedia sekarang di shop  |  ❌ = Tidak ada stok", "inline": False},
+            {"name": "⏳  Restock Berikutnya", "value": countdown_txt, "inline": False},
+        ],
+        "footer": {"text": "George's Gear Shop • Restock tiap 5 menit"}
+    }
+
+    pet_lines = []
+    for i, p in enumerate(pet_spawns, 1):
+        rc = RARITY_COLOR.get(p["rarity"], "")
+        tier_color = "🔴" if p["tier"] == "S" else "🟡" if p["tier"] == "A" else "🟢" if p["tier"] == "B" else "⚪"
+        pet_lines.append(
+            f"`{i}.` {p['emoji']} **{p['name']}** {tier_color} Tier {p['tier']}\n"
+            f"     {rc} {p['rarity']} | 💰 `{p['price']}`\n"
+            f"     ⚡ {p['ability']}"
+        )
+
+    all_pet_ref = []
+    for i, p in enumerate(ALL_PETS, 1):
+        rc = RARITY_COLOR.get(p["rarity"], "")
+        all_pet_ref.append(f"`{i:02d}.` {p['emoji']} {p['name']} — {rc} {p['rarity']} | {p['price']}")
+
+    has_sniper = any(p["name"] == "Strawberry Sniper" for p in pet_spawns)
+    sniper_alert = (
+        f"🚨 **Strawberry Sniper kemungkinan spawn sekarang!** Cepat join private server:\n{PRIVATE_SERVER_LINK}"
+        if has_sniper else
+        f"🔗 Join private server buat cek langsung: {PRIVATE_SERVER_LINK}"
+    )
+
+    embed_pets = {
+        "title": "🐾  PET SPAWN PREDICTOR — Server KiKo15400 (SEKARANG)",
+        "color": 0xe91e63,
+        "description": (
+            "⚠️ *Prediksi berdasarkan spawn rate per pet. Spawn bersifat random per server.*\n\n"
+            "**🟢 Pet yang kemungkinan SPAWN sekarang:**\n\n"
+            + "\n".join(pet_lines)
+            + f"\n\n{sniper_alert}"
+        ),
+        "fields": [
+            {"name": "📋  Semua Pet GAG2 (Referensi)", "value": "\n".join(all_pet_ref[:8]), "inline": False},
+            {"name": "\u200b", "value": "\n".join(all_pet_ref[8:]), "inline": False},
+        ],
+        "footer": {"text": "🐾 Pet spawn bisa di-steal sebelum sampai garden — jaga baik-baik!"}
+    }
+
+    next_seeds_txt = fmt_seeds(super_next, "Super/Mythic")
+    embed_seeds_next = {
+        "title": "🔮  PREDIKSI SUPER & MYTHIC SEEDS — RESTOCK BERIKUTNYA",
+        "color": 0xb8860b,
+        "description": next_seeds_txt,
+        "fields": [
+            {"name": "⏳  Estimasi Restock", "value": countdown_txt, "inline": False},
             {
-                "name": "🟢  TERSEDIA SEKARANG",
-                "value": now_seeds_txt,
-                "inline": False
-            },
-            {
-                "name": f"🔮  PREDIKSI NEXT RESTOCK ({mins}m {secs}s)",
-                "value": next_seeds_txt,
-                "inline": False
-            },
-            {
-                "name": "📋  REFERENSI SEMUA SUPER SEEDS",
+                "name": "📋  Referensi Semua Super Seeds",
                 "value": (
                     "```\n"
                     "No  Nama              Harga       Chance\n"
@@ -269,57 +339,23 @@ def send_to_discord(now, wib_str, mins, secs):
                 "inline": False
             }
         ],
-        "footer": {"text": "⭐ Super seeds = rarity tertinggi di GAG2"}
+        "footer": {"text": "🔮 Prediksi, bukan kepastian — cuaca & shop tetap random"}
     }
 
-    # ────────────────────────────────────────
-    # EMBED 3: WATERING CAN & ALL SPRINKLERS
-    # ────────────────────────────────────────
-    sprinkler_lines = []
-    for i, g in enumerate(WATERING_GEAR, 1):
-        rc = RARITY_COLOR.get(g["rarity"], "")
-        in_stock = "✅" if any(s["name"] == g["name"] for s in sprinklers) else "❌"
-        sprinkler_lines.append(
-            f"`{i}.` {g['emoji']} **{g['name']}** {in_stock}\n"
-            f"     💰 `{g['price']}` | {rc} {g['rarity']}\n"
-            f"     ⚡ {g['effect']}"
-        )
-
-    embed_sprinklers = {
-        "title": "💧  WATERING CAN & ALL SPRINKLERS",
-        "color": 0x00bcd4,
-        "description": "\n".join(sprinkler_lines),
-        "fields": [
-            {
-                "name": "📌  Keterangan",
-                "value": "✅ = Tersedia sekarang di shop  |  ❌ = Tidak ada stok",
-                "inline": False
-            }
-        ],
-        "footer": {"text": "George's Gear Shop • Restock tiap 5 menit"}
-    }
-
-    # ────────────────────────────────────────
-    # EMBED 4: PREDIKSI CUACA SELANJUTNYA
-    # ────────────────────────────────────────
     weather_lines = []
     labels = ["1️⃣  Berikutnya", "2️⃣  Setelah itu", "3️⃣  Perkiraan ke-3"]
     for i, w in enumerate(next_weathers):
         rare_mark = " 🚨 RARE!" if w["rare"] else ""
         weather_lines.append(
             f"**{labels[i]}{rare_mark}**\n"
-            f"```\n"
-            f"Cuaca     : {w['name']}\n"
-            f"Mutation  : {w['mutation']}\n"
-            f"Multiplier: {w['mult']}\n"
-            f"```"
+            f"```\nCuaca     : {w['name']}\nMutation  : {w['mutation']}\nMultiplier: {w['mult']}\n```"
             f"💡 {w['tip']}"
         )
 
-    embed_weather = {
+    embed_weather_next = {
         "title": "🌦️  PREDIKSI CUACA SELANJUTNYA",
         "color": 0x5865f2,
-        "description": "\n\n".join(weather_lines),
+        "description": "\n\n".join(weather_lines) + f"\n\n⏳  Estimasi cuaca berganti: {countdown_txt}",
         "fields": [
             {
                 "name": "📋  Semua Cuaca Mutasi (dari terkecil ke terbesar)",
@@ -346,9 +382,6 @@ def send_to_discord(now, wib_str, mins, secs):
         "footer": {"text": "Cuaca bersifat global — semua server sama!"}
     }
 
-    # ────────────────────────────────────────
-    # EMBED 5: FENCE PROPS
-    # ────────────────────────────────────────
     fence_lines = []
     for i, f in enumerate(FENCE_PROPS, 1):
         rc = RARITY_COLOR.get(f["rarity"], "")
@@ -358,7 +391,7 @@ def send_to_discord(now, wib_str, mins, secs):
         )
 
     embed_fences = {
-        "title": "🏠  FENCE PROPS — Semua Jenis Pagar",
+        "title": "🏠  FENCE PROPS — Referensi Semua Jenis Pagar",
         "color": 0x8b6914,
         "description": (
             "Props pagar didapat dari **Fence Crate** di Props Shop.\n"
@@ -380,73 +413,42 @@ def send_to_discord(now, wib_str, mins, secs):
         "footer": {"text": "Props Shop • Fence Crate"}
     }
 
-    # ────────────────────────────────────────
-    # EMBED 6: PET SPAWN PREDICTOR
-    # ────────────────────────────────────────
-    pet_lines = []
-    for i, p in enumerate(pet_spawns, 1):
-        rc = RARITY_COLOR.get(p["rarity"], "")
-        tier_color = "🔴" if p["tier"] == "S" else "🟡" if p["tier"] == "A" else "🟢" if p["tier"] == "B" else "⚪"
-        pet_lines.append(
-            f"`{i}.` {p['emoji']} **{p['name']}** {tier_color} Tier {p['tier']}\n"
-            f"     {rc} {p['rarity']} | 💰 `{p['price']}`\n"
-            f"     ⚡ {p['ability']}"
+    # ════════════════════════════════════════════════
+    # EMBED: FRUIT PRICE / "BUAH OP" SAAT INI
+    # Harga = base price x multiplier cuaca aktif sekarang
+    # ════════════════════════════════════════════════
+    fruit_lines = []
+    for i, fr in enumerate(fruit_prices[:8], 1):
+        op_tag = " 🔥 **OP!**" if i <= 3 else ""
+        fruit_lines.append(
+            f"`{i}.` {fr['emoji']} **{fr['name']}**{op_tag}\n"
+            f"     💰 Harga sekarang: `{fr['current_price']:,} S` (base `{fr['base']:,}` × {fr['mult']})"
         )
 
-    all_pet_ref = []
-    for i, p in enumerate(ALL_PETS, 1):
-        rc = RARITY_COLOR.get(p["rarity"], "")
-        all_pet_ref.append(f"`{i:02d}.` {p['emoji']} {p['name']} — {rc} {p['rarity']} | {p['price']}")
-
-    embed_pets = {
-        "title": f"🐾  PET SPAWN PREDICTOR — Server KiKo15400",
-        "color": 0xe91e63,
+    embed_fruit_prices = {
+        "title": "🍎  FRUIT PRICE — Harga Jual Sekarang",
+        "color": 0xff6b35,
         "description": (
-            "⚠️ *Prediksi berdasarkan spawn rate per pet. Spawn bersifat random per server.*\n\n"
-            "**🟢 Pet yang kemungkinan SPAWN sekarang:**\n\n"
-            + "\n".join(pet_lines)
+            f"Mutasi aktif: **{fruit_prices[0]['mutation']}** ({active_weather['mult']})\n"
+            "Harga di bawah = base price tiap buah dikali multiplier cuaca yang sedang aktif.\n\n"
+            + "\n".join(fruit_lines)
         ),
         "fields": [
-            {
-                "name": "📋  Semua Pet GAG2 (Referensi Lengkap)",
-                "value": "\n".join(all_pet_ref[:8]),
-                "inline": False
-            },
-            {
-                "name": "\u200b",
-                "value": "\n".join(all_pet_ref[8:]),
-                "inline": False
-            },
-            {
-                "name": "🏆  Best Pets Ranking",
-                "value": (
-                    "```\n"
-                    "S Tier: Unicorn, Ice Serpent, Raccoon, Bee,\n"
-                    "        Golden Dragonfly, Black Dragon, Strawberry Sniper\n"
-                    "A Tier: Deer, Bunny\n"
-                    "B Tier: Owl, Frog, Monkey\n"
-                    "C Tier: Robin\n"
-                    "```\n"
-                    "💡 Saat pet **Legendary/Mythic/Super** spawn → game akan notif di layar!"
-                ),
-                "inline": False
-            }
+            {"name": "🔥  Top 3 paling OP buat dijual sekarang", "value": "\n".join(f"{fr['emoji']} {fr['name']}" for fr in fruit_prices[:3]), "inline": False},
+            {"name": "⏳  Mutasi berganti", "value": countdown_txt, "inline": False},
         ],
-        "footer": {"text": "🐾 Pet spawn bisa di-steal sebelum sampai garden — jaga baik-baik!"}
+        "footer": {"text": "Harga dasar referensi komunitas — bisa beda sedikit dari in-game"}
     }
 
-    # ════════════════════════════════════════
-    # KIRIM KE DISCORD (2 pesan, 3 embed each)
-    # ════════════════════════════════════════
     p1 = {
         "username": "GAG2 Predictor 🌱",
         "content": header,
-        "embeds": [embed_status, embed_seeds, embed_sprinklers]
+        "embeds": [embed_status, embed_seeds_now, embed_sprinklers, embed_pets, embed_fruit_prices]
     }
     p2 = {
         "username": "GAG2 Predictor 🌱",
-        "content": "",
-        "embeds": [embed_weather, embed_fences, embed_pets]
+        "content": "🔽 **PREDIKSI & REFERENSI** 🔽",
+        "embeds": [embed_seeds_next, embed_weather_next, embed_fences]
     }
 
     r1 = requests.post(WEBHOOK_URL, json=p1)
@@ -464,9 +466,9 @@ def send_to_discord(now, wib_str, mins, secs):
         exit(1)
 
 def main():
-    now, wib_str, mins, secs = get_time_info()
+    now, wib_str, mins, secs, restock_ts = get_time_info()
     print(f"[{wib_str}] Mengirim prediksi GAG2 untuk KiKo15400...")
-    send_to_discord(now, wib_str, mins, secs)
+    send_to_discord(now, wib_str, mins, secs, restock_ts)
 
 if __name__ == "__main__":
     main()
